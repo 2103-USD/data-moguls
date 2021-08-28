@@ -1,7 +1,6 @@
 {
   "name": "starting_code",
   "version": "1.0.0",
-  "description": "",
   "main": "index.js",
   "scripts": {
     "postinstall": "npm run client:build",
@@ -16,16 +15,20 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^0.19.2",
+    "bcrypt": "^5.0.1",
+    "cors": "^2.8.5",
+    "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "morgan": "^1.10.0",
-    "pg": "^8.2.1",
+    "pg": "^8.7.1",
+    "psql": "0.0.1",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-router-dom": "^5.2.0",
     "react-scripts": "^3.4.1"
   },
   "devDependencies": {
-    "nodemon": "^2.0.4"
+    "nodemon": "^2.0.12"
   },
   "proxy": "http://localhost:5000",
   "browserslist": {
@@ -39,5 +42,13 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/2103-USD/data-moguls.git"
+  },
+  "bugs": {
+    "url": "https://github.com/2103-USD/data-moguls/issues"
+  },
+  "description": ""
 }

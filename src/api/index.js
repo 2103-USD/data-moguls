@@ -1,10 +1,5 @@
-import axios from 'axios';
+export const BASE_URL = process.env.SERVER_URL || "http://localhost:5000";
 
-export async function getSomething() {
-  try {
-    const { data } = await axios.get('/api');
-    return data;
-  } catch (error) {
-    throw error;
-  }
-}
+export * from "./orders";
+export * from "./products";
+export * from "./users";
