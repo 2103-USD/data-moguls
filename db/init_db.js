@@ -6,8 +6,6 @@ const { createProduct, getAllProducts, getProductByID } = require("./products");
 const dotenv = require("dotenv");
 dotenv.config();
 
-// const { createUser } = require("./db");
-
 async function dropTables() {
   try {
     console.log("Dropping Tables ...");
@@ -103,7 +101,7 @@ async function createInitialUsers() {
         firstName: "Admin",
         lastName: "Admin",
         email: "admin@gmail.com",
-        isAdmin: false,
+        isAdmin: true,
       });
 
     console.log("Finished creating users!");
@@ -291,6 +289,26 @@ async function createInitialOrders() {
         status: "cancelled",
         datePlaced: new Date(),
       });
+    await createOrder({
+      userId: 1,
+      status: "created",
+      datePlaced: new Date(),
+    }),
+      await createOrder({
+        userId: 2,
+        status: "created",
+        datePlaced: new Date(),
+      }),
+      await createOrder({
+        userId: 3,
+        status: "created",
+        datePlaced: new Date(),
+      }),
+      await createOrder({
+        userId: 4,
+        status: "created",
+        datePlaced: new Date(),
+      });
 
     console.log("Finished creating orders!");
   } catch (error) {
@@ -366,18 +384,3 @@ rebuildDB()
   .then(testDB)
   .catch(console.error)
   .finally(() => client.end());
-
-// async function populateInitialData() {
-//   try {
-//     // create useful starting data
-//   } catch (error) {
-//     throw error;
-//   }
-// }
-
-// buildTables()
-//   .then(populateInitialData)
-//   .catch(console.error)
-//   .finally(() => client.end());
-
-//comment
