@@ -88,11 +88,11 @@ export const OrderCreated = ({
     {console.log(orderSubtotal)}
        {orderSubtotal ?   <StripeCheckout
         stripeKey={STRIPE_KEY}
-        token={handleToken(orderSubtotal * 100)}
+        token={handleToken(100 * 100)}
         name="Webb Pets"
         billingAddress
         shippingAddress
-        amount={orderSubtotal * 100}
+        amount={100 * 100}
         currency={CURRENCY}
       ></StripeCheckout> : '' }
       
