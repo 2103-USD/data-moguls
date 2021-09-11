@@ -1,16 +1,21 @@
 import React, { useState, useEffect } from "react";
 
+import { Link } from "react-router-dom";
+
+import { toast } from "react-toastify";
+
 import { getOrdersByUserId } from "../api";
 
 export const Account = ({ currentUser }) => {
-  const [userOrders, setUserOrders] = useState();
-  // DESTRUCTURE ORDERS WITH ORDER PRODUCTS, AND MAP BELOW
-
   const [orderList, setOrderList] = useState([]);
 
   const fetchData = async () => {
-    const fetchedOrders = await getOrdersByUserId(currentUser.id);
-    setOrderList(fetchedOrders);
+    try {
+      const fetchedOrders = await getOrdersByUserId(currentUser.id);
+      setOrderList(fetchedOrders);
+    } catch (error) {
+      toast.error(error.response.data.message);
+    }
   };
 
   useEffect(() => {
@@ -35,16 +40,18 @@ export const Account = ({ currentUser }) => {
         <ul>
           {orderList.length > 0 &&
             orderList.map((order) => {
-              return (
-                <li key={order.id}>
-                  Order #{order.id} - {order.status} - {order.datePlaced}
-                </li>
-              );
+              if (order.status !== "created") {
+                return (
+                  <li key={order.id}>
+                    <Link to={`/order/${order.id}`}>
+                      Order #{order.id} - {order.status} - {order.datePlaced}
+                    </Link>
+                  </li>
+                );
+              }
             })}
         </ul>
       </div>
     </div>
   );
 };
-
-// THIS IS A CHANGE

@@ -18,6 +18,11 @@ apiRouter.use(async (req, res, next) => {
       if (id) {
         req.user = await getUserById(id);
         next();
+      } else {
+        next({
+          name: "TokenNotValidError",
+          message: "The token supplied is not valid.",
+        });
       }
     } catch ({ name, message }) {
       next({ name, message });
@@ -30,16 +35,16 @@ apiRouter.use(async (req, res, next) => {
   }
 });
 
-const healthRouter = require("./health");
-apiRouter.use("/health", healthRouter);
+apiRouter.use("/health", require("./health"));
 
-const productsRouter = require("./products");
-apiRouter.use("/products", productsRouter);
+apiRouter.use("/products", require("./products"));
 
-const usersRouter = require("./users");
-apiRouter.use("/users", usersRouter);
+apiRouter.use("/users", require("./users"));
 
-const ordersRouter = require("./orders");
-apiRouter.use("/orders", ordersRouter);
+apiRouter.use("/orders", require("./orders"));
+
+apiRouter.use("/stripe", require("./stripe"));
+
+apiRouter.use("/order-products", require("./orderProducts"));
 
 module.exports = apiRouter;

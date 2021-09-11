@@ -1,38 +1,24 @@
 const client = require("./client");
 
-async function createOrder({ status, userId, datePlaced }) {
-  const {
-    rows: [order],
-  } = await client.query(
-    `
-            INSERT INTO orders(status, "userId", "datePlaced")
-            VALUES ($1, $2, $3)
-            RETURNING *;
-        `,
-    [status, userId, datePlaced]
-  );
+async function createOrder({ status, userId }) {
+  const currentDate = new Date();
 
-  return order;
-}
-
-//join products on orderId
-async function getOrderById(id) {
   try {
     const {
       rows: [order],
     } = await client.query(
       `
-        SELECT *
-        FROM orders
-        WHERE id = $1;
+            INSERT INTO orders(status, "userId", "datePlaced")
+            VALUES ($1, $2, $3)
+            RETURNING *;
         `,
-      [id]
+      [status, userId, currentDate]
     );
 
     if (!order) {
       throw {
-        name: "OrderNotFound",
-        message: "Order with selected id cannot be found.",
+        name: "CreateOrderError",
+        message: "Error creating order.",
       };
     }
 
@@ -42,23 +28,75 @@ async function getOrderById(id) {
   }
 }
 
-async function getOrdersByUser(id) {
+async function getOrderById(orderId) {
   try {
-    const { rows: orders } = await client.query(
+    const {
+      rows: [order],
+    } = await client.query(
+      `
+        SELECT id AS "orderId", status, "userId", "datePlaced"
+        FROM orders
+        WHERE id = $1;
+        `,
+      [orderId]
+    );
+
+    if (!order) {
+      throw {
+        name: "OrderNotFound",
+        message: "Order with selected id cannot be found.",
+      };
+    }
+
+    const { rows: order_products } = await client.query(
+      `
+        SELECT order_products.id AS "orderProductId", "productId", order_products.price, quantity, name, description, "imageURL", "inStock", category
+        FROM order_products
+        INNER JOIN products ON products.id = "productId"
+        WHERE "orderId" = $1;
+        `,
+      [orderId]
+    );
+
+    order.orderProducts = order_products;
+
+    return order;
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function getOrdersByUser(userId) {
+  try {
+    const { rows: results } = await client.query(
       `
             SELECT *
             FROM orders
             WHERE "userId" = $1;
         `,
-      [id]
+      [userId]
     );
 
-    if (!orders) {
-      throw {
-        name: "UserOrdersNotFound",
-        message: "Orders for this user cannot be found.",
-      };
-    }
+    if (!results) return;
+
+    const orders = await Promise.all(
+      results.map(async (result) => {
+        const { id: orderId } = result;
+        const { rows: order_products } = await client.query(
+          `
+        SELECT order_products.id AS "orderProductId", "productId", order_products.price, quantity, name, description, "imageURL", "inStock", category
+        FROM order_products
+        INNER JOIN products ON products.id = "productId"
+        WHERE "orderId" = $1;
+        `,
+          [orderId]
+        );
+
+        result.orderProducts = order_products;
+
+        return result;
+      })
+    );
 
     return orders;
   } catch (error) {
@@ -66,7 +104,7 @@ async function getOrdersByUser(id) {
   }
 }
 
-async function getOrdersByProduct({ id }) {
+async function getOrdersByProduct(id) {
   try {
     const { rows: orderIds } = await client.query(
       `
@@ -79,7 +117,7 @@ async function getOrdersByProduct({ id }) {
       [id]
     );
 
-    if (!orderIds) {
+    if (!orderIds.length > 0) {
       throw {
         name: "OrderWithProductNotFound",
         message: "Orders for this product cannot be found.",
@@ -98,6 +136,13 @@ async function getAllOrders() {
             SELECT * 
             FROM orders;
         `);
+
+    if (!rows.length > 0) {
+      throw {
+        name: "NoOrdersError",
+        message: "There are no existing orders.",
+      };
+    }
 
     return rows;
   } catch (error) {
@@ -119,12 +164,20 @@ async function getCartByUser(userId) {
       [userId]
     );
 
-    if (!order) {
-      throw {
-        name: "NoCartError",
-        message: "There is no existing cart for this user.",
-      };
-    }
+    if (!order) return null;
+
+    const { rows: order_products } = await client.query(
+      `
+        SELECT order_products.id AS "orderProductId", "productId", order_products.price, quantity, name, description, "imageURL", "inStock", category
+        FROM order_products
+        INNER JOIN products ON products.id = "productId"
+        WHERE "orderId" = $1;
+        `,
+      [order.id]
+    );
+
+    order.orderProducts = order_products;
+
     return order;
   } catch (error) {
     throw error;
@@ -163,6 +216,13 @@ async function updateOrder({ id, status, userId }) {
       Object.values(updateFields)
     );
 
+    if (!updatedOrder) {
+      throw {
+        name: "UpdateOrderError",
+        message: "Error updating order.",
+      };
+    }
+
     return updatedOrder;
   } catch (error) {
     throw error;
@@ -183,6 +243,13 @@ async function completeOrder({ id }) {
       [id]
     );
 
+    if (!order) {
+      throw {
+        name: "CompleteOrderError",
+        message: "Unable to complete this order.",
+      };
+    }
+
     return order;
   } catch (error) {
     throw error;
@@ -201,6 +268,13 @@ async function cancelOrder(id) {
         RETURNING *;`,
       [id]
     );
+
+    if (!order) {
+      throw {
+        name: "CancelOrderError",
+        message: "Unable to cancel this order.",
+      };
+    }
 
     return order;
   } catch (error) {

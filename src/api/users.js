@@ -13,6 +13,8 @@ export function createAuthHeader() {
         Authorization: `Bearer ${getUserToken()}`,
       },
     };
+  } else {
+    console.error("Unable to create authorization header!");
   }
 }
 
@@ -33,7 +35,6 @@ export async function registerUser({
       email: email,
       isAdmin: isAdmin,
     });
-    console.log("DATA => ", data);
     localStorage.setItem("token", data.token);
     // IF STATUS 200, TOAST: 'THANK YOU FOR SIGNING UP'
     return data.user;

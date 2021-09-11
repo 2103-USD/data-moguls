@@ -1,14 +1,20 @@
 import React, { useState } from "react";
 
+import { toast } from "react-toastify";
+
 import { loginUser, getCartByUserId } from "../api";
 
-export const Login = ({ currentUser, setCurrentUser, cart, setCart }) => {
+export const Login = ({
+  setCurrentUser,
+  visitorCart,
+  setVisitorCart,
+  setCart,
+  mergeCart,
+}) => {
   const [form, setForm] = useState({
     username: "",
     password: "",
   });
-
-  const [errorMessage, setErrorMessage] = useState("");
 
   const handleFormChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -16,17 +22,10 @@ export const Login = ({ currentUser, setCurrentUser, cart, setCart }) => {
 
   const checkCredentials = (username, password) => {
     if (!username || !password) {
-      setErrorMessage("Please supply a valid username and password.");
+      toast.error("Please supply a valid username and password!");
       return false;
     }
     return true;
-  };
-
-  const mergeCart = async () => {
-    if (!cart) return;
-    const storedCart = await getCartByUserId(currentUser.id);
-    const mergedCart = storedCart.concat(cart);
-    setCart(mergedCart);
   };
 
   const handleSubmit = async (e) => {
@@ -35,11 +34,14 @@ export const Login = ({ currentUser, setCurrentUser, cart, setCart }) => {
     if (!checkCredentials(username, password)) return;
     try {
       const { user: loggedInUser } = await loginUser({ username, password });
+      visitorCart.length > 0 && (await mergeCart(loggedInUser));
+      const userCart = await getCartByUserId(loggedInUser.id);
+      setCart(userCart);
+      setVisitorCart([]);
       setCurrentUser(loggedInUser);
-      localStorage.setItem("currentUser", JSON.stringify(loggedInUser));
-      await mergeCart();
+      toast.success("Sign in successful!");
     } catch (error) {
-      throw error;
+      toast.error(`${error.response.data.message}`);
     }
   };
 
@@ -67,7 +69,6 @@ export const Login = ({ currentUser, setCurrentUser, cart, setCart }) => {
         </label>
         <input type="submit" value="log in" onClick={handleSubmit} />
       </form>
-      {errorMessage ? <p className="error-message">{errorMessage}</p> : null}
     </div>
   );
 };

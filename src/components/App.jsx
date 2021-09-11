@@ -2,6 +2,10 @@ import React, { useState, useEffect } from "react";
 
 import { BrowserRouter as Router, Route } from "react-router-dom";
 
+import { ToastContainer, toast } from "react-toastify";
+
+import "react-toastify/dist/ReactToastify.css";
+
 import {
   Header,
   Register,
@@ -10,10 +14,14 @@ import {
   AllProducts,
   Product,
   Order,
-  Cart,
 } from "./index";
 
-import { getCartByUserId } from "../api";
+import {
+  getCartByUserId,
+  addProductToOrder,
+  updateOrderProduct,
+  createOrder,
+} from "../api";
 
 export const App = () => {
   const [currentUser, setCurrentUser] = useState(
@@ -24,37 +32,84 @@ export const App = () => {
     JSON.parse(localStorage.getItem("cart")) || null
   );
 
-  const fetchCart = async () => {
+  const [visitorCart, setVisitorCart] = useState(
+    JSON.parse(localStorage.getItem("visitorCart")) || []
+  );
+
+  const mergeCart = async ({ id: userId }) => {
     try {
-      const fetchedCart = await getCartByUserId(currentUser.id);
-      setCart(fetchedCart);
+      const existingCart = await getCartByUserId(userId);
+      if (!existingCart) {
+        const { id: orderId } = await createOrder(userId);
+        await Promise.all(
+          visitorCart.map(
+            async ({ id: productId, price, quantity }) =>
+              await addProductToOrder(orderId, productId, price, quantity)
+          )
+        );
+      } else {
+        toast.info("Cart has been added to your account.", { autoClose: 5000 });
+        await Promise.all(
+          visitorCart.map(async ({ id: productId, price, quantity }) => {
+            const [productToUpdate] = existingCart.orderProducts.filter(
+              (product) => product.productId === productId
+            );
+            if (!productToUpdate) {
+              const { id: orderId } = existingCart;
+              await addProductToOrder(orderId, productId, price, quantity);
+            } else {
+              const { orderProductId, quantity: oldQuantity } = productToUpdate;
+              const newQuantity = oldQuantity + quantity;
+              await updateOrderProduct(orderProductId, price, newQuantity);
+            }
+          })
+        );
+      }
     } catch (error) {
-      console.error(error);
+      toast.error(`${error.response.data.message}`);
     }
   };
 
   useEffect(() => {
-    if (currentUser && !cart) {
-      fetchCart();
+    if (currentUser) {
+      localStorage.setItem("currentUser", JSON.stringify(currentUser));
+      cart && localStorage.setItem("cart", JSON.stringify(cart));
+    } else if (visitorCart && visitorCart.length > 0) {
+      localStorage.setItem("visitorCart", JSON.stringify(visitorCart));
+    } else {
+      localStorage.removeItem("visitorCart");
     }
-  }, [currentUser, cart]);
+  }, [currentUser, cart, visitorCart]);
 
   return (
     <div id="app">
       <Router>
-        <Header currentUser={currentUser} setCurrentUser={setCurrentUser} />
+        <Header
+          currentUser={currentUser}
+          setCurrentUser={setCurrentUser}
+          setCart={setCart}
+          setVisitorCart={setVisitorCart}
+        />
+        <ToastContainer autoClose={3000} position={"bottom-right"} />
         {/* HOME PAGE, WITH PRODUCT CATEGORIES? */}
         {!currentUser ? (
           <>
             <Route path="/account/register">
-              <Register setCurrentUser={setCurrentUser} cart={cart} />
+              <Register
+                setCurrentUser={setCurrentUser}
+                visitorCart={visitorCart}
+                setVisitorCart={setVisitorCart}
+                setCart={setCart}
+                mergeCart={mergeCart}
+              />
             </Route>
             <Route path="/account/login">
               <Login
-                currentUser={currentUser}
                 setCurrentUser={setCurrentUser}
-                cart={cart}
+                visitorCart={visitorCart}
+                setVisitorCart={setVisitorCart}
                 setCart={setCart}
+                mergeCart={mergeCart}
               />
             </Route>
           </>
@@ -69,13 +124,25 @@ export const App = () => {
           <AllProducts />
         </Route>
         <Route path="/product/:productId">
-          <Product cart={cart} setCart={setCart} />
+          <Product
+            currentUser={currentUser}
+            cart={cart}
+            setCart={setCart}
+            visitorCart={visitorCart}
+            setVisitorCart={setVisitorCart}
+          />
         </Route>
         <Route path="/order/:orderId">
           <Order />
         </Route>
         <Route path="/cart">
-          <Cart cart={cart} currentUser={currentUser} />
+          <Order
+            cart={cart}
+            setCart={setCart}
+            visitorCart={visitorCart}
+            setVisitorCart={setVisitorCart}
+            currentUser={currentUser}
+          />
         </Route>
       </Router>
     </div>

@@ -1,8 +1,16 @@
 import React, { useState } from "react";
 
-import { registerUser } from "../api";
+import { toast } from "react-toastify";
 
-export const Register = ({ setCurrentUser, cart }) => {
+import { registerUser, getCartByUserId } from "../api";
+
+export const Register = ({
+  setCurrentUser,
+  visitorCart,
+  setVisitorCart,
+  setCart,
+  mergeCart,
+}) => {
   const [form, setForm] = useState({
     username: "",
     password: "",
@@ -41,17 +49,12 @@ export const Register = ({ setCurrentUser, cart }) => {
     return true;
   };
 
-  const storeCart = () => {
-    if (cart.length < 1) return;
-    localStorage.setItem("cart", JSON.stringify(cart));
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!checkCredentials()) return;
     const { username, password, firstName, lastName, email, isAdmin } = form;
     try {
-      const currentUser = await registerUser({
+      const newUser = await registerUser({
         username,
         password,
         firstName,
@@ -59,11 +62,18 @@ export const Register = ({ setCurrentUser, cart }) => {
         email,
         isAdmin,
       });
-      setCurrentUser(currentUser);
-      localStorage.setItem("currentUser", JSON.stringify(currentUser));
-      storeCart();
+      if (visitorCart.length > 0) {
+        await mergeCart(newUser);
+        const userCart = await getCartByUserId(newUser.id);
+        setCart(userCart);
+        setVisitorCart([]);
+        toast.success("Welcome to WEBB Pets! Your account has been created.", {
+          autoClose: 5000,
+        });
+      }
+      setCurrentUser(newUser);
     } catch (error) {
-      throw error;
+      toast.error(`${error.response.data.message}`);
     }
   };
 

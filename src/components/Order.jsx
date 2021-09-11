@@ -4,7 +4,15 @@ import { useLocation, useParams } from "react-router-dom";
 
 import { getOrder } from "../api";
 
-export const Order = ({ cart }) => {
+import { OrderSwitch } from "./index";
+
+export const Order = ({
+  cart,
+  setCart,
+  visitorCart,
+  setVisitorCart,
+  currentUser,
+}) => {
   const [openOrder, setOpenOrder] = useState(null);
 
   const { pathname } = useLocation();
@@ -21,27 +29,31 @@ export const Order = ({ cart }) => {
   };
 
   useEffect(() => {
-    if (pathname === "/cart") {
+    if (pathname === "/cart" && currentUser) {
       setOpenOrder(cart);
+    } else if (pathname === "/cart" && visitorCart.length > 0) {
+      setOpenOrder({ orderProducts: [...visitorCart], status: "created" });
+    } else if (pathname === "/cart") {
+      setOpenOrder({ status: "created" });
     } else if (params.orderId) {
       fetchData();
     }
-  }, []);
+  }, [cart, visitorCart]);
 
   return (
     <>
-      {openOrder ? (
+      {openOrder && (
         <div className="order">
-          <h3>Order #{openOrder.id}</h3>
-          {openOrder.status == "created" ? (
-            <p>Items in cart:</p>
-          ) : openOrder.status == "completed" ? (
-            <p>Date placed: {openOrder.datePlaced}</p>
-          ) : openOrder.status == "canceled" ? (
-            <p>Status: order canceled</p>
-          ) : null}
+          <OrderSwitch
+            openOrder={openOrder}
+            currentUser={currentUser}
+            cart={cart}
+            setCart={setCart}
+            visitorCart={visitorCart}
+            setVisitorCart={setVisitorCart}
+          />
         </div>
-      ) : null}
+      )}
     </>
   );
 };

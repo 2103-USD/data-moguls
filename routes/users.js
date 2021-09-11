@@ -10,6 +10,7 @@ const {
   getUser,
   getAllUsers,
   getOrdersByUser,
+  updateUser,
 } = require("../db");
 const { requireUser, isAdmin } = require("./utils");
 
@@ -85,8 +86,8 @@ usersRouter.post("/login", async (req, res, next) => {
         message: "Username and/or password is incorrect",
       });
     }
-  } catch (error) {
-    throw error;
+  } catch ({ name, message }) {
+    next({ name, message });
   }
 });
 
@@ -94,8 +95,8 @@ usersRouter.get("/me", requireUser, async (req, res, next) => {
   try {
     const user = getUser();
     res.send(user);
-  } catch (error) {
-    throw error;
+  } catch ({ name, message }) {
+    next({ name, message });
   }
 });
 
@@ -104,6 +105,36 @@ usersRouter.get("/", isAdmin, async (req, res, next) => {
     const users = await getAllUsers();
 
     res.send(users);
+  } catch ({ name, message }) {
+    next({ name, message });
+  }
+});
+
+usersRouter.get("/:userId/orders", isAdmin, async (req, res, next) => {
+  const { userId } = req.params;
+
+  try {
+    const orders = await getOrdersByUser(userId);
+    res.send(orders);
+  } catch ({ name, message }) {
+    next({ name, message });
+  }
+});
+
+usersRouter.patch("/:userId", isAdmin, async (req, res, next) => {
+  const { userId } = req.params;
+  const { username, password, firstName, lastName, email, isAdmin } = req.body;
+  try {
+    const updatedUser = await updateUser({
+      userId,
+      username,
+      password,
+      firstName,
+      lastName,
+      email,
+      isAdmin,
+    });
+    res.send(updatedUser);
   } catch ({ name, message }) {
     next({ name, message });
   }

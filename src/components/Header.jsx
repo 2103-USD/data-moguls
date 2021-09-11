@@ -2,14 +2,21 @@ import React from "react";
 
 import { Link } from "react-router-dom";
 
-export const Header = ({ currentUser, setCurrentUser }) => {
+export const Header = ({
+  currentUser,
+  setCurrentUser,
+  setCart,
+  setVisitorCart,
+}) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     // BUILD OUT SEARCH SUBMIT FUNCTION
   };
   const handleLogout = () => {
-    setCurrentUser(null);
     localStorage.clear();
+    setCart(null);
+    setVisitorCart([]);
+    setCurrentUser(null);
   };
 
   return (
@@ -38,7 +45,6 @@ export const Header = ({ currentUser, setCurrentUser }) => {
       )}
       <Link to="/cart">
         <span className="material-icons-outlined">shopping_cart</span>
-        {/* Add counter for shopping cart items! */}
       </Link>
     </nav>
   );

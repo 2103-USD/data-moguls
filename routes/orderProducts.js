@@ -2,8 +2,29 @@ const orderProductsRouter = require("express").Router();
 const {
   destroyOrderProduct,
   updateOrderProduct,
+  addProductToOrder,
 } = require("../db/orderProducts");
 const { requireUser } = require("./utils");
+
+orderProductsRouter.post(
+  "/order/:orderId",
+  requireUser,
+  async (req, res, next) => {
+    const { orderId } = req.params;
+    const { productId, price, quantity } = req.body;
+    try {
+      const addedOrderProduct = await addProductToOrder({
+        orderId,
+        productId,
+        price,
+        quantity,
+      });
+      res.send(addedOrderProduct);
+    } catch ({ name, message }) {
+      next({ name, message });
+    }
+  }
+);
 
 orderProductsRouter.patch(
   "/:orderProductId",
@@ -19,9 +40,9 @@ orderProductsRouter.patch(
         quantity: quantity,
       });
 
-      res.send(updatedOrderProduct);
-    } catch (error) {
-      throw error;
+      if (updatedOrderProduct) res.send(updatedOrderProduct);
+    } catch ({ name, message }) {
+      next({ name, message });
     }
   }
 );
@@ -33,29 +54,13 @@ orderProductsRouter.delete(
     const { orderProductId } = req.params;
 
     try {
-      const deleteOrderProduct = await destroyOrderProduct(orderProductId);
+      const deletedOrderProduct = await destroyOrderProduct(orderProductId);
 
-      res.send(deleteOrderProduct);
-    } catch (error) {
-      throw error;
+      res.send(deletedOrderProduct);
+    } catch ({ name, message }) {
+      next({ name, message });
     }
   }
 );
-
-ordersRouter.post("/orders/:orderId/products", requireUser, async(req, res, next) => {
-    const {orderId} = req.params;
-    const {productId, price, quantity} = req.body;
-    try {
-        const addedOrderProduct = await addProductToOrder({
-            orderId,
-            productId,
-            price,
-            quantity});
-
-        res.send(addedOrderProduct)
-    } catch (error) {
-        throw error;
-    }
-})
 
 module.exports = orderProductsRouter;

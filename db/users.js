@@ -26,9 +26,16 @@ async function createUser({
     );
     delete user.password;
 
+    if (!user) {
+      throw {
+        name: "CreateUserError",
+        message: "Unable to create this user.",
+      };
+    }
+
     return user;
-  } catch (err) {
-    throw Error(`Error while creating user: ${err}`);
+  } catch (error) {
+    throw error;
   }
 }
 
@@ -44,16 +51,26 @@ async function getUser({ username, password }) {
       [username]
     );
 
+    if (!user) {
+      throw {
+        name: "UserDoesNotExistError",
+        message: "This user does not exist.",
+      };
+    }
+
     const passwordsMatch = await bcrypt.compare(password, user.password);
 
     if (passwordsMatch) {
       delete user.password;
       return user;
     } else {
-      throw error;
+      throw {
+        name: "PasswordMatchError",
+        message: "Password is incorrect.",
+      };
     }
-  } catch (err) {
-    throw Error(`Error while getting user: ${err}`);
+  } catch (error) {
+    throw error;
   }
 }
 
@@ -63,9 +80,17 @@ async function getAllUsers() {
         SELECT * FROM users
         `);
     delete users.password;
+
+    if (!users.length > 0) {
+      throw {
+        name: "GetAllUsersError",
+        message: "Error fetching all users.",
+      };
+    }
+
     return users;
-  } catch (err) {
-    throw Error(`Error while getting all users: ${err}`);
+  } catch (error) {
+    throw error;
   }
 }
 
@@ -80,10 +105,17 @@ async function getUserById(id) {
       [id]
     );
 
+    if (!user) {
+      throw {
+        name: "GetUserByIdError",
+        message: "No user matching this id.",
+      };
+    }
+
     delete user.password;
     return user;
-  } catch (err) {
-    throw Error(`Error while getting user by ID: ${err}`);
+  } catch (error) {
+    throw error;
   }
 }
 
@@ -98,6 +130,35 @@ async function getUserByUsername(username) {
         `,
       [username]
     );
+
+    return user;
+  } catch (err) {
+    throw error;
+  }
+}
+
+async function updateUser({
+  id,
+  username,
+  password,
+  firstName,
+  lastName,
+  email,
+  isAdmin,
+}) {
+  try {
+    const {
+      rows: [user],
+    } = await client.query(
+      `
+      UPDATE users 
+      SET "username"=$1, "password"=$2, "firstName"=$3, "lastName"=$4, "email"=$5, "isAdmin"=$6
+      WHERE id=$7 
+      RETURNING *;
+      `,
+      [username, password, firstName, lastName, email, isAdmin, id]
+    );
+
     return user;
   } catch (err) {
     throw error;
@@ -110,4 +171,5 @@ module.exports = {
   getAllUsers,
   getUserById,
   getUserByUsername,
+  updateUser,
 };

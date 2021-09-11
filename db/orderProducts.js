@@ -1,4 +1,4 @@
-const { client } = require("./client");
+const client = require("./client");
 
 async function getOrderProductById(id) {
   try {
@@ -13,6 +13,13 @@ async function getOrderProductById(id) {
       [id]
     );
 
+    if (!order_product) {
+      throw {
+        name: "getOrderProductByIdError",
+        message: "Order contains no product with this id.",
+      };
+    }
+
     return order_product;
   } catch (error) {
     throw error;
@@ -21,11 +28,11 @@ async function getOrderProductById(id) {
 
 async function addProductToOrder({ orderId, productId, price, quantity }) {
   try {
-    const {
+    let {
       rows: [orderProduct],
     } = await client.query(
       `
-            SELECT * 
+            SELECT *
             FROM order_products
             WHERE "orderId" = $1
             AND "productId" = $2;
@@ -33,16 +40,19 @@ async function addProductToOrder({ orderId, productId, price, quantity }) {
       [orderId, productId]
     );
 
-    //if orderProduct exists await updateOrderProduct for order_products quantity (add passed-in quantity to the current order_products quantity)
-    // + order_products price
     if (orderProduct) {
-      await updateOrderProduct({
+      orderProduct = await updateOrderProduct({
         id: orderProduct.id,
-        price: orderProduct.price,
-        quantity: orderProduct.quantity,
+        price: price,
+        quantity: quantity,
       });
     } else {
-      await createNewOrderProduct({ orderId, productId, price, quantity });
+      orderProduct = await createNewOrderProduct({
+        orderId,
+        productId,
+        price,
+        quantity,
+      });
     }
 
     return orderProduct;
@@ -82,7 +92,9 @@ async function updateOrderProduct({ id, price, quantity }) {
         `,
       Object.values(updateFields)
     );
-
+    //
+    console.log("DB - ORDER_PRODUCT: ", order_product);
+    //
     return order_product;
   } catch (error) {
     throw error;
@@ -102,6 +114,13 @@ async function createNewOrderProduct({ orderId, productId, price, quantity }) {
       [orderId, productId, price, quantity]
     );
 
+    if (!order_product) {
+      throw {
+        name: "CreateOrderProductError",
+        message: "Unable to add this product to order.",
+      };
+    }
+
     return order_product;
   } catch (error) {
     throw error;
@@ -111,7 +130,7 @@ async function createNewOrderProduct({ orderId, productId, price, quantity }) {
 async function destroyOrderProduct(id) {
   try {
     const {
-      rows: [order_products],
+      rows: [order_product],
     } = await client.query(
       `
             DELETE
@@ -122,7 +141,7 @@ async function destroyOrderProduct(id) {
       [id]
     );
 
-    return order_products;
+    return order_product;
   } catch (error) {
     throw error;
   }
