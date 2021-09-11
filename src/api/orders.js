@@ -4,7 +4,11 @@ import { BASE_URL, createAuthHeader } from "./index";
 
 export async function createOrder(userId) {
   try {
-    const { data } = axios.post(`${BASE_URL}/api/orders`, createAuthHeader);
+    const { data } = await axios.post(
+      `${BASE_URL}/api/orders`,
+      { userId: userId },
+      createAuthHeader()
+    );
     return data;
   } catch (error) {
     throw error;
@@ -41,8 +45,28 @@ export async function getOrdersByUserId(userId) {
       `${BASE_URL}/api/orders/${userId}/allorders`,
       createAuthHeader()
     );
+
     return data;
   } catch (error) {
     throw error;
   }
+}
+
+export async function updateOrder(orderId, status, userId) {
+  try {
+    const { data } = await axios.patch(
+      `${BASE_URL}/api/orders/${orderId}`,
+      {
+        id: orderId,
+        status: status,
+        userId: userId
+      },
+      createAuthHeader()
+    );
+
+    return data;
+  } catch (error) {
+    throw error;
+  }
+
 }

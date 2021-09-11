@@ -92,14 +92,9 @@ async function updateOrderProduct({ id, price, quantity }) {
         `,
       Object.values(updateFields)
     );
-
-    if (!order_product) {
-      throw {
-        name: "UpdateOrderProductError",
-        message: "Unable to update this order product.",
-      };
-    }
-
+    //
+    console.log("DB - ORDER_PRODUCT: ", order_product);
+    //
     return order_product;
   } catch (error) {
     throw error;
@@ -125,9 +120,7 @@ async function createNewOrderProduct({ orderId, productId, price, quantity }) {
         message: "Unable to add this product to order.",
       };
     }
-    //
-    console.log("ORDER PRODUCT => ", order_product);
-    //
+
     return order_product;
   } catch (error) {
     throw error;
@@ -147,7 +140,7 @@ async function destroyOrderProduct(id) {
         `,
       [id]
     );
-    console.log("HER HERE HERERE", order_product);
+
     return order_product;
   } catch (error) {
     throw error;
