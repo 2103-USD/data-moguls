@@ -79,7 +79,7 @@ export const OrderCreated = ({
       if (currentUser) {
         await updateOrder(orderId, status, currentUser.id);
 
-        setCart([]);
+        setCart(null);
       }
       setVisitorCart([]);
     } catch (error) {
