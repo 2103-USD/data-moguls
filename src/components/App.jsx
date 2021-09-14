@@ -8,6 +8,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 import {
   Header,
+  Categories,
   Register,
   Login,
   Account,
@@ -35,6 +36,8 @@ export const App = () => {
   const [visitorCart, setVisitorCart] = useState(
     JSON.parse(localStorage.getItem("visitorCart")) || []
   );
+
+  const [searchFilter, setSearchFilter] = useState(null);
 
   const mergeCart = async ({ id: userId }) => {
     try {
@@ -89,9 +92,12 @@ export const App = () => {
           setCurrentUser={setCurrentUser}
           setCart={setCart}
           setVisitorCart={setVisitorCart}
+          handleSearch={setSearchFilter}
         />
         <ToastContainer autoClose={3000} position={"bottom-right"} />
-        {/* HOME PAGE, WITH PRODUCT CATEGORIES? */}
+        <Route exact path="/">
+          <Categories handleSearch={setSearchFilter} />
+        </Route>
         {!currentUser ? (
           <>
             <Route path="/account/register">
@@ -121,7 +127,7 @@ export const App = () => {
           </>
         )}
         <Route path="/products">
-          <AllProducts />
+          <AllProducts searchFilter={searchFilter} />
         </Route>
         <Route path="/product/:productId">
           <Product

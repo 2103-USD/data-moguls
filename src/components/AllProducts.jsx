@@ -4,35 +4,50 @@ import { Link } from "react-router-dom";
 
 import { getAllProducts, formatCurrency } from "../api";
 
-export const AllProducts = () => {
+export const AllProducts = ({ searchFilter = null }) => {
   const [productList, setProductList] = useState([]);
 
   const fetchData = async () => {
     const fetchedProducts = await getAllProducts();
-    setProductList(fetchedProducts);
+    if (!searchFilter) {
+      setProductList(fetchedProducts);
+    } else {
+      setProductList(
+        fetchedProducts.filter((product) => {
+          if (product.name.toLowerCase().includes(searchFilter.toLowerCase()))
+            return product;
+        })
+      );
+    }
   };
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [searchFilter]);
 
   return (
-    <div className="all-products">
-      {/* CATEGORIES FILTER */}
+    <div id="all-products">
       {productList.length > 0 &&
         productList.map(({ id, name, price, imageURL }) => {
           return (
             <div className="thumbnail-product" key={id}>
-              <h2>
-                <Link to={`/product/${id}`}>{name}</Link>
-              </h2>
-              <div className="thumbnail-product-image">
-                <img src={imageURL} />
-              </div>
-              <div className="thumbnail-product-details">
-                <div className="thumbnail-product-price">
-                  {formatCurrency(price)}
+              <Link
+                to={`/product/${id}`}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  flexGrow: "2",
+                }}
+              >
+                <div className="thumbnail-product-image">
+                  <img src={imageURL} />
                 </div>
+                <h3>{name}</h3>
+              </Link>
+              <div className="thumbnail-product-price">
+                Price: {formatCurrency(price)}
               </div>
             </div>
           );
